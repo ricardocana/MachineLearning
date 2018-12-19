@@ -1,0 +1,79 @@
+---
+title: "practica1GradientDescent"
+author: "Ricardo Ocana Martinez"
+date: "23 de noviembre de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+Sigmoid <- function(x) { 
+  1 / (1 + exp(-x))
+}
+
+# feed with data
+x <- seq(-5, 5, 0.01)
+
+# and plot
+plot(x, Sigmoid(x), col='blue', ylim = c(-.2, 1))
+abline(h = 0, v = 0, col = "gray60")
+```
+
+
+```{r}
+# Ref: https://www.r-bloggers.com/logistic-regression-with-r-step-by-step-implementation-part-2/
+# Cost Function
+# 
+CostFunction <- function(parameters, X, Y) {
+  n <- nrow(X)
+  # function to apply (%*% Matrix multiplication)
+  g <- Sigmoid(X %*% parameters)
+  J <- (1/n) * sum((-Y * log(g)) - ((1 - Y) * log(1 - g)))
+  return(J)
+}
+```
+
+
+```{r}
+#Load data
+data <- read.csv("data/4_1_data.csv")
+
+#Create plot
+plot(data$score.1, data$score.2, col = as.factor(data$label), xlab = "Score-1", ylab = "Score-2")
+```
+Exercise 1
+```{r}
+library(caret)
+library(glmnet)
+set.seed(12345)
+model<-glm(label~score.1 + score.2,data=data, family="binomial")## we make a logistic regression on the binary ##variable label as a dependent variable; and score.1 and score.2 as independent variables.
+prediction<-as.numeric(predict(model,data, "response")>0.68)##umbral 0.68
+table(prediction, data$label, dnn=c("Predicted","Truth"))
+Threshold<-function(x=0.68){return(x)}
+Threshold(0.99)
+```
+
+```{r}
+data_clean <- subset(data, select = c(score.1, score.2))
+data_clean <- cbind(initial = 1, data_clean)
+
+dfProb <- 0
+for(i in 1:nrow(data_clean)){
+  res <- Sigmoid(t(as.numeric(data_clean[i,])) %*% parameters)
+  dfProb <- rbind(dfProb, res)
+}
+dfProb
+
+#La primera linea de este dataframe no tiene info
+dfProb <- as.data.frame(dfProb)
+dfProb <- dfProb[-1,]
+
+#Dataframe original + las probabilidades
+data_complete <- cbind(data, prob = dfProb)
+table(data_complete$label, ifelse(data_complete$prob > 0.68, 1, 0))
+```
+
